@@ -11,7 +11,7 @@ import {
   obtenerProgresoMeta,
   formatearMoneda,
   formatearFecha,
-  hoyISO,
+  hoyISO, inicioSemanaISO,
   agruparPorCategoria,
   agruparIngresosPorCategoria,
   obtenerColorCategoria,
@@ -20,7 +20,7 @@ import Donut from '@/components/Donut'
 import Modal from '@/components/Modal'
 import TasasCambio from '@/components/TasasCambio'
 import { useTasas } from '@/hooks/useTasas'
-import { WalletIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, CalendarDaysIcon } from '@heroicons/react/24/outline'
+import { WalletIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, CalendarDaysIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { Seccion } from '@/lib/types'
 
 interface Props {
@@ -32,15 +32,44 @@ export default function Resumen({ onNavigate }: Props) {
   const { cuentas, transacciones, metas } = data
   const tasas = useTasas()
 
+  const [semanaActiva, setSemanaActiva] = useState(false)
+  const [filtroMes, setFiltroMes] = useState(() => String(new Date().getMonth() + 1))
+  const [filtroAnio, setFiltroAnio] = useState(() => String(new Date().getFullYear()))
   const [filtroDesde, setFiltroDesde] = useState('')
   const [filtroHasta, setFiltroHasta] = useState('')
 
+  function aplicarMes(m: string) {
+    setFiltroMes(m); setSemanaActiva(false); setFiltroDesde(''); setFiltroHasta('')
+  }
+
+  function aplicarAnio(a: string) {
+    setFiltroAnio(a); setSemanaActiva(false); setFiltroDesde(''); setFiltroHasta('')
+  }
+
+  function aplicarSemana() {
+    setSemanaActiva(true); setFiltroDesde(inicioSemanaISO()); setFiltroHasta(hoyISO())
+  }
+
+  const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+  const mesesOptions = useMemo(() => [{ value: '', label: 'Todos los meses' }, ...MESES.map((label, i) => ({ value: String(i + 1), label }))], [])
+
+  const aniosOptions = useMemo(() => {
+    const now = new Date(); const anios: string[] = []
+    for (let i = 2; i >= 0; i--) anios.push(String(now.getFullYear() - i))
+    return anios
+  }, [])
+
   const transaccionesFiltradas = useMemo(() => {
     let t = transacciones
-    if (filtroDesde) t = t.filter((tx) => tx.fecha >= filtroDesde)
-    if (filtroHasta) t = t.filter((tx) => tx.fecha <= filtroHasta)
+    if (filtroDesde && filtroHasta) {
+      t = t.filter((tx) => tx.fecha >= filtroDesde && tx.fecha <= filtroHasta)
+    } else {
+      if (filtroMes) t = t.filter((tx) => new Date(tx.fecha + 'T00:00:00').getMonth() + 1 === parseInt(filtroMes))
+      if (filtroAnio) t = t.filter((tx) => tx.fecha.startsWith(filtroAnio))
+    }
     return t
-  }, [transacciones, filtroDesde, filtroHasta])
+  }, [transacciones, filtroDesde, filtroHasta, filtroMes, filtroAnio])
 
   const hayFiltros = filtroDesde || filtroHasta
 
@@ -96,18 +125,45 @@ export default function Resumen({ onNavigate }: Props) {
     [cuentas, transacciones]
   )
 
+  const totalEfectivoTarjeta = useMemo(() => {
+    const nombres = ['Efectivo', 'Tarjetas']
+    const ids = new Set(cuentas.filter((c) => nombres.includes(c.nombre)).map((c) => c.id))
+    let total = 0
+    for (const c of cuentas) if (ids.has(c.id)) total += c.saldoInicial
+    for (const t of transacciones) if (ids.has(t.cuentaId)) total += t.tipo === 'ingreso' ? t.monto : -t.monto
+    return total
+  }, [cuentas, transacciones])
+
   return (
     <div className="space-y-6">
-      {/* Date filter row */}
-      <div className="flex items-center gap-2">
+      {/* Period and date filter row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={aplicarSemana}
+          className={`px-2.5 py-1.5 text-xs font-medium rounded-xl transition-colors ${semanaActiva ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}>
+          Semana
+        </button>
+        <div className="relative">
+          <select value={filtroMes} onChange={(e) => aplicarMes(e.target.value)}
+            className="pl-3 pr-8 py-1.5 text-xs border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10 appearance-none">
+            {mesesOptions.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
+          </select>
+          <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select value={filtroAnio} onChange={(e) => aplicarAnio(e.target.value)}
+            className="pl-3 pr-8 py-1.5 text-xs border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10 appearance-none">
+            {aniosOptions.map((a) => (<option key={a} value={a}>{a}</option>))}
+          </select>
+          <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+        </div>
         <CalendarDaysIcon className="w-4 h-4 text-zinc-400" />
-        <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)}
+        <input type="date" value={filtroDesde} onChange={(e) => { setFiltroDesde(e.target.value); setSemanaActiva(false) }}
           className="px-3 py-1.5 text-xs border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10" />
         <span className="text-xs text-zinc-400">a</span>
-        <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)}
+        <input type="date" value={filtroHasta} onChange={(e) => { setFiltroHasta(e.target.value); setSemanaActiva(false) }}
           className="px-3 py-1.5 text-xs border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/10" />
         {hayFiltros && (
-          <button onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}
+          <button onClick={() => { setFiltroDesde(''); setFiltroHasta(''); setSemanaActiva(false) }}
             className="px-2.5 py-1.5 text-xs font-medium text-zinc-500 bg-zinc-100 hover:bg-zinc-200 rounded-xl transition-colors">
             Limpiar
           </button>
@@ -124,42 +180,33 @@ export default function Resumen({ onNavigate }: Props) {
           </div>
         )}
 
-        {/* Bento 2: Balance General + Hoy */}
-        <div className="md:col-span-1 bg-white rounded-2xl border border-zinc-100/50 p-5 pt-4 flex flex-col">
-          <p className="text-[10px] text-zinc-400 mb-1.5">Balance General</p>
-          <p className="text-2xl font-bold text-zinc-800">
-            {formatearMoneda(balanceGeneral)}
-          </p>
+        {/* Bento 2: Total + Balance General */}
+        <div className="md:col-span-1 bg-white rounded-2xl border border-zinc-100/50 p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider">Total:</p>
+            <p className="text-xl font-bold text-zinc-800">{formatearMoneda(totalEfectivoTarjeta)}</p>
+          </div>
+          <div className="flex items-center justify-between bg-zinc-50 rounded-xl px-3 py-1.5">
+            <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider">Balance General</p>
+            <p className="text-xs font-bold text-zinc-600">{formatearMoneda(balanceGeneral)}</p>
+          </div>
           {balanceGeneralCUP && (
-            <p className="text-xs text-zinc-400 -mt-0.5">
-              ≈ {formatearMoneda(balanceGeneralCUP)} <span className="text-zinc-300">CUP</span>
-            </p>
+            <p className="text-[10px] text-zinc-400 -mt-1 text-right">≈ {formatearMoneda(balanceGeneralCUP)} CUP</p>
           )}
-          <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center">
-              <WalletIcon className="w-3.5 h-3.5 text-zinc-500" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 bg-red-50/50 rounded-xl px-3 py-2">
+              <ArrowTrendingDownIcon className="w-3 h-3 text-red-400" />
+              <div>
+                <p className="text-[9px] text-zinc-400">Hoy gastos</p>
+                <p className="text-xs font-semibold text-red-500">-{formatearMoneda(gastosHoy)}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] text-zinc-400">Cuentas</p>
-              <p className="text-sm font-semibold text-zinc-800">{cuentas.length}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center">
-              <ArrowTrendingDownIcon className="w-3.5 h-3.5 text-red-400" />
-            </div>
-            <div>
-              <p className="text-[10px] text-zinc-400">Gastos hoy</p>
-              <p className="text-sm font-semibold text-red-500">-{formatearMoneda(gastosHoy)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-[10px] text-zinc-400">Ingresos hoy</p>
-              <p className="text-sm font-semibold text-emerald-600">+{formatearMoneda(ingresosHoy)}</p>
+            <div className="flex items-center gap-2 bg-emerald-50/50 rounded-xl px-3 py-2">
+              <ArrowTrendingUpIcon className="w-3 h-3 text-emerald-500" />
+              <div>
+                <p className="text-[9px] text-zinc-400">Hoy ingresos</p>
+                <p className="text-xs font-semibold text-emerald-600">+{formatearMoneda(ingresosHoy)}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -262,8 +309,8 @@ export default function Resumen({ onNavigate }: Props) {
         <div className="flex flex-col items-center gap-4">
           <img src="/imgs/anillos.png" alt="" className="w-20 h-20 object-contain" />
           <div className="text-center">
-            <p className="text-[10px] text-zinc-400 mb-0.5">Balance General</p>
-            <p className="text-2xl font-bold text-zinc-800">{formatearMoneda(balanceGeneral)}</p>
+            <p className="text-[10px] text-zinc-400 mb-0.5">Total:</p>
+            <p className="text-2xl font-bold text-zinc-800">{formatearMoneda(totalEfectivoTarjeta)}</p>
           </div>
           <div className="w-full space-y-2">
             <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Cuentas</p>
