@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast'
 import Modal from '@/components/Modal'
 import EmptyState from '@/components/EmptyState'
 import { CATEGORIAS_GASTO, Transaccion } from '@/lib/types'
-import { formatearMoneda, formatearFecha, hoyISO, obtenerColorCategoria, obtenerBalanceCuenta } from '@/lib/utils'
+import { formatearMoneda, formatearFecha, hoyISO, obtenerColorCategoria, obtenerBalanceCuenta, inicioMesISO, finMesISO } from '@/lib/utils'
 import { XMarkIcon, PencilSquareIcon, TagIcon, WalletIcon, CalendarDaysIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 
 export default function Gastos() {
@@ -20,8 +20,8 @@ export default function Gastos() {
   const [editando, setEditando] = useState<Transaccion | null>(null)
   const [confirmarEliminar, setConfirmarEliminar] = useState<string | null>(null)
   const [filtroCuenta, setFiltroCuenta] = useState('')
-  const [filtroDesde, setFiltroDesde] = useState('')
-  const [filtroHasta, setFiltroHasta] = useState('')
+  const [filtroDesde, setFiltroDesde] = useState(inicioMesISO)
+  const [filtroHasta, setFiltroHasta] = useState(finMesISO)
   const [formDescripcion, setFormDescripcion] = useState('')
   const [formMonto, setFormMonto] = useState('')
   const [formCuentaId, setFormCuentaId] = useState('')
@@ -62,6 +62,16 @@ export default function Gastos() {
     return f
   }, [gastos, filtroCuenta, filtroDesde, filtroHasta])
   const totalGastos = useMemo(() => gastosFiltrados.reduce((s, g) => s + g.monto, 0), [gastosFiltrados])
+  const gastosPorCuenta = useMemo(() => {
+    const mapa: Record<string, { nombre: string; color: string; total: number }> = {}
+    for (const g of gastosFiltrados) {
+      const cuenta = cuentas.find(c => c.id === g.cuentaId)
+      if (!cuenta) continue
+      if (!mapa[cuenta.id]) mapa[cuenta.id] = { nombre: cuenta.nombre, color: cuenta.color, total: 0 }
+      mapa[cuenta.id].total += g.monto
+    }
+    return Object.values(mapa).sort((a, b) => b.total - a.total)
+  }, [gastosFiltrados, cuentas])
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -98,6 +108,18 @@ export default function Gastos() {
             )}
             <p className="text-sm text-zinc-500 ml-auto">Total: <span className="font-semibold text-zinc-800">{formatearMoneda(totalGastos)}</span></p>
           </div>
+
+          {gastosPorCuenta.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {gastosPorCuenta.map((c) => (
+                <div key={c.nombre} className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 rounded-xl text-xs">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
+                  <span className="text-zinc-500">{c.nombre}</span>
+                  <span className="font-semibold text-zinc-800">{formatearMoneda(c.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl border border-zinc-100/50 divide-y divide-zinc-50">
             {gastosFiltrados.length === 0 ? (
