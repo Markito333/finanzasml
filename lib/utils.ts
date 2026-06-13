@@ -28,6 +28,32 @@ export function hoyISO(): string {
   return new Date().toISOString().split('T')[0]
 }
 
+export function inicioMesISO(): string {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]
+}
+
+export function finMesISO(): string {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0]
+}
+
+export function inicioAnioISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-01-01`
+}
+
+export function finAnioISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-12-31`
+}
+
+export function inicioSemanaISO(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 7)
+  return d.toISOString().split('T')[0]
+}
+
 export function obtenerBalanceCuenta(
   cuentaId: string,
   saldoInicial: number,
