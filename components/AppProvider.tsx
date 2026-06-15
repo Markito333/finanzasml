@@ -8,7 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from 'react'
-import { AppData, Cuenta, Transaccion, Meta, GastoFijo, IngresoFijo } from '@/lib/types'
+import { AppData, Cuenta, Transaccion, Meta, GastoFijo, IngresoFijo, Transferencia } from '@/lib/types'
 import { generarId } from '@/lib/utils'
 
 const STORAGE_KEY = 'finanzasml-data'
@@ -19,6 +19,7 @@ const DATA_VACIA: AppData = {
   metas: [],
   gastosFijos: [],
   ingresosFijos: [],
+  transferencias: [],
 }
 
 interface AppContextType {
@@ -39,6 +40,9 @@ interface AppContextType {
   agregarIngresoFijo: (g: Omit<IngresoFijo, 'id'>) => void
   actualizarIngresoFijo: (id: string, g: Partial<IngresoFijo>) => void
   eliminarIngresoFijo: (id: string) => void
+  agregarTransferencia: (t: Omit<Transferencia, 'id' | 'createdAt'>) => void
+  actualizarTransferencia: (id: string, t: Partial<Transferencia>) => void
+  eliminarTransferencia: (id: string) => void
   importarData: (d: AppData) => void
 }
 
@@ -61,6 +65,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ) {
           if (!('ingresosFijos' in parsed)) {
             parsed.ingresosFijos = []
+          }
+          if (!('transferencias' in parsed)) {
+            parsed.transferencias = []
           }
           if (parsed.gastosFijos) {
             parsed.gastosFijos = parsed.gastosFijos.map((g: any) => {
@@ -282,6 +289,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [mutar]
   )
 
+  const agregarTransferencia = useCallback(
+    (t: Omit<Transferencia, 'id' | 'createdAt'>) => {
+      mutar((d) => ({
+        ...d,
+        transferencias: [
+          ...d.transferencias,
+          {
+            ...t,
+            id: generarId(),
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      }))
+    },
+    [mutar]
+  )
+
+  const actualizarTransferencia = useCallback(
+    (id: string, t: Partial<Transferencia>) => {
+      mutar((d) => ({
+        ...d,
+        transferencias: d.transferencias.map((tx) =>
+          tx.id === id ? { ...tx, ...t } : tx
+        ),
+      }))
+    },
+    [mutar]
+  )
+
+  const eliminarTransferencia = useCallback(
+    (id: string) => {
+      mutar((d) => ({
+        ...d,
+        transferencias: d.transferencias.filter((t) => t.id !== id),
+      }))
+    },
+    [mutar]
+  )
+
   const importarData = useCallback(
     (nueva: AppData) => {
       guardar(nueva)
@@ -309,6 +355,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         agregarIngresoFijo,
         actualizarIngresoFijo,
         eliminarIngresoFijo,
+        agregarTransferencia,
+        actualizarTransferencia,
+        eliminarTransferencia,
         importarData,
       }}
     >

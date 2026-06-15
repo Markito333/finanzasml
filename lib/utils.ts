@@ -1,4 +1,4 @@
-import { Transaccion, Cuenta, Meta } from './types'
+import { Transaccion, Cuenta, Meta, Transferencia } from './types'
 
 export function generarId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -57,7 +57,8 @@ export function inicioSemanaISO(): string {
 export function obtenerBalanceCuenta(
   cuentaId: string,
   saldoInicial: number,
-  transacciones: Transaccion[]
+  transacciones: Transaccion[],
+  transferencias: Transferencia[] = []
 ): number {
   const movimientos = transacciones.filter((t) => t.cuentaId === cuentaId)
   const ingresos = movimientos
@@ -66,15 +67,22 @@ export function obtenerBalanceCuenta(
   const gastos = movimientos
     .filter((t) => t.tipo === 'gasto')
     .reduce((s, t) => s + t.monto, 0)
-  return saldoInicial + ingresos - gastos
+  const enviado = transferencias
+    .filter((t) => t.cuentaOrigenId === cuentaId)
+    .reduce((s, t) => s + t.monto, 0)
+  const recibido = transferencias
+    .filter((t) => t.cuentaDestinoId === cuentaId)
+    .reduce((s, t) => s + t.monto, 0)
+  return saldoInicial + ingresos - gastos + recibido - enviado
 }
 
 export function obtenerBalanceGeneral(
   cuentas: Cuenta[],
-  transacciones: Transaccion[]
+  transacciones: Transaccion[],
+  transferencias: Transferencia[] = []
 ): number {
   return cuentas.reduce((total, c) => {
-    return total + obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones)
+    return total + obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones, transferencias)
   }, 0)
 }
 

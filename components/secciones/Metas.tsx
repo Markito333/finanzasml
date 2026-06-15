@@ -12,8 +12,8 @@ import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
 export default function Metas() {
   const { data, agregarMeta, actualizarMeta, eliminarMeta } = useApp()
   const { mostrarToast } = useToast()
-  const { cuentas, transacciones, metas } = data
-  const totalBalance = useMemo(() => obtenerBalanceGeneral(cuentas, transacciones), [cuentas, transacciones])
+  const { cuentas, transacciones, metas, transferencias } = data
+  const totalBalance = useMemo(() => obtenerBalanceGeneral(cuentas, transacciones, transferencias), [cuentas, transacciones, transferencias])
 
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Meta | null>(null)

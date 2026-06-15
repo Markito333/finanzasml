@@ -2,6 +2,16 @@ export type TipoCuenta = 'efectivo' | 'tarjeta' | 'dolar' | 'euro' | 'cup' | 'ot
 
 export type TipoTransaccion = 'gasto' | 'ingreso'
 
+export interface Transferencia {
+  id: string
+  cuentaOrigenId: string
+  cuentaDestinoId: string
+  monto: number
+  descripcion: string
+  fecha: string
+  createdAt: string
+}
+
 export interface Cuenta {
   id: string
   nombre: string
@@ -68,9 +78,10 @@ export interface AppData {
   metas: Meta[]
   gastosFijos: GastoFijo[]
   ingresosFijos: IngresoFijo[]
+  transferencias: Transferencia[]
 }
 
-export type Seccion = 'resumen' | 'cuentas' | 'gastos' | 'ingresos' | 'metas' | 'gastos-fijos' | 'estadisticas' | 'calendario' | 'ingresos-fijos'
+export type Seccion = 'resumen' | 'cuentas' | 'gastos' | 'ingresos' | 'metas' | 'gastos-fijos' | 'estadisticas' | 'calendario' | 'ingresos-fijos' | 'transferencias'
 
 export const CATEGORIAS_GASTO: { label: string; icon: string }[] = [
   { label: 'Comida', icon: '🍽️' },

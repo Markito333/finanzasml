@@ -29,7 +29,7 @@ interface Props {
 
 export default function Resumen({ onNavigate }: Props) {
   const { data } = useApp()
-  const { cuentas, transacciones, metas } = data
+  const { cuentas, transacciones, metas, transferencias } = data
   const tasas = useTasas()
 
   const [semanaActiva, setSemanaActiva] = useState(false)
@@ -73,16 +73,16 @@ export default function Resumen({ onNavigate }: Props) {
 
   const hayFiltros = filtroDesde || filtroHasta
 
-  const balanceGeneral = useMemo(() => obtenerBalanceGeneral(cuentas, transaccionesFiltradas), [cuentas, transaccionesFiltradas])
+  const balanceGeneral = useMemo(() => obtenerBalanceGeneral(cuentas, transaccionesFiltradas, transferencias), [cuentas, transaccionesFiltradas, transferencias])
   const balanceGeneralCUP = useMemo(() => {
     if (!tasas) return null
     return cuentas.reduce((total, c) => {
-      const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transaccionesFiltradas)
+      const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transaccionesFiltradas, transferencias)
       if (c.tipo === 'dolar') return total + balance * tasas.usd
       if (c.tipo === 'euro') return total + balance * tasas.eur
       return total + balance
     }, 0)
-  }, [cuentas, transaccionesFiltradas, tasas])
+  }, [cuentas, transaccionesFiltradas, transferencias, tasas])
   const totalIngresos = useMemo(() => obtenerTotalIngresos(transaccionesFiltradas), [transaccionesFiltradas])
   const totalGastos = useMemo(() => obtenerTotalGastos(transaccionesFiltradas), [transaccionesFiltradas])
   const gastosPorCategoria = useMemo(() => agruparPorCategoria(transaccionesFiltradas), [transaccionesFiltradas])
@@ -121,8 +121,8 @@ export default function Resumen({ onNavigate }: Props) {
   )
 
   const cuentasConBalance = useMemo(() =>
-    cuentas.map((c) => ({ ...c, balance: obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones) })),
-    [cuentas, transacciones]
+    cuentas.map((c) => ({ ...c, balance: obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones, transferencias) })),
+    [cuentas, transacciones, transferencias]
   )
 
   const totalEfectivoTarjeta = useMemo(() => {
@@ -260,7 +260,7 @@ export default function Resumen({ onNavigate }: Props) {
             <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Cuentas</h3>
             <div className="space-y-3">
               {cuentas.slice(0, 4).map((c) => {
-                const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones)
+                const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones, transferencias)
                 const tasa = c.tipo === 'dolar' ? tasas?.usd : c.tipo === 'euro' ? tasas?.eur : null
                 return (
                   <div key={c.id}>

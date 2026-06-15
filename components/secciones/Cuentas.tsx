@@ -13,7 +13,7 @@ import { PencilSquareIcon, TrashIcon, CreditCardIcon, ChevronDownIcon } from '@h
 export default function Cuentas() {
   const { data, agregarCuenta, actualizarCuenta, eliminarCuenta } = useApp()
   const { mostrarToast } = useToast()
-  const { cuentas, transacciones } = data
+  const { cuentas, transacciones, transferencias } = data
   const tasas = useTasas()
 
   const [modalAbierto, setModalAbierto] = useState(false)
@@ -53,7 +53,7 @@ export default function Cuentas() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {cuentas.map((c) => {
-            const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones)
+            const balance = obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones, transferencias)
             const tasa = c.tipo === 'dolar' ? tasas?.usd : c.tipo === 'euro' ? tasas?.eur : null
             const balanceCup = tasa ? balance * tasa : null
             return (

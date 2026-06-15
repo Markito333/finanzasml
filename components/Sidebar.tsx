@@ -10,6 +10,7 @@ import {
   ClipboardDocumentListIcon,
   ChartPieIcon,
   CalendarDaysIcon,
+  ArrowPathIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 
@@ -18,6 +19,7 @@ const NAV: { id: Seccion; label: string; Icon: React.ComponentType<React.SVGProp
   { id: 'cuentas', label: 'Cuentas', Icon: WalletIcon },
   { id: 'gastos', label: 'Gastos', Icon: ArrowTrendingDownIcon },
   { id: 'ingresos', label: 'Ingresos', Icon: ArrowTrendingUpIcon },
+  { id: 'transferencias', label: 'Transferencias', Icon: ArrowPathIcon },
   { id: 'metas', label: 'Metas', Icon: FlagIcon },
   { id: 'gastos-fijos', label: 'Gastos Fijos', Icon: ClipboardDocumentListIcon },
   { id: 'ingresos-fijos', label: 'Ingresos Fijos', Icon: ArrowTrendingUpIcon },

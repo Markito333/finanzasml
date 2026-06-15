@@ -14,6 +14,7 @@ import GastosFijos from '@/components/secciones/GastosFijos'
 import IngresosFijos from '@/components/secciones/IngresosFijos'
 import Estadisticas from '@/components/secciones/Estadisticas'
 import Calendario from '@/components/secciones/Calendario'
+import Transferencias from '@/components/secciones/Transferencias'
 import { Seccion } from '@/lib/types'
 import { ReactNode } from 'react'
 import { Bars3Icon } from '@heroicons/react/24/outline'
@@ -28,6 +29,7 @@ const TITULOS: Record<Seccion, string> = {
   'ingresos-fijos': 'Ingresos Fijos',
   estadisticas: 'Estadísticas',
   calendario: 'Calendario',
+  transferencias: 'Transferencias',
 }
 
 function HomeContent() {
@@ -44,6 +46,7 @@ function HomeContent() {
     'ingresos-fijos': <IngresosFijos />,
     estadisticas: <Estadisticas />,
     calendario: <Calendario />,
+    transferencias: <Transferencias />,
   }
 
   return (

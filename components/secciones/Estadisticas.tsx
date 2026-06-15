@@ -12,7 +12,7 @@ import { CalendarDaysIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, ChevronDo
 
 export default function Estadisticas() {
   const { data } = useApp()
-  const { cuentas, transacciones } = data
+  const { cuentas, transacciones, transferencias } = data
 
   const [semanaActiva, setSemanaActiva] = useState(false)
   const [filtroMes, setFiltroMes] = useState(() => String(new Date().getMonth() + 1))
@@ -53,14 +53,14 @@ export default function Estadisticas() {
   }, [transacciones, filtroDesde, filtroHasta, filtroMes, filtroAnio])
 
   const hayFiltros = filtroDesde || filtroHasta
-  const balanceGeneral = useMemo(() => obtenerBalanceGeneral(cuentas, transaccionesFiltradas), [cuentas, transaccionesFiltradas])
+  const balanceGeneral = useMemo(() => obtenerBalanceGeneral(cuentas, transaccionesFiltradas, transferencias), [cuentas, transaccionesFiltradas, transferencias])
   const totalIngresos = useMemo(() => obtenerTotalIngresos(transaccionesFiltradas), [transaccionesFiltradas])
   const totalGastos = useMemo(() => obtenerTotalGastos(transaccionesFiltradas), [transaccionesFiltradas])
   const gastosPorCategoria = useMemo(() => agruparPorCategoria(transaccionesFiltradas), [transaccionesFiltradas])
   const totalGastosCalc = useMemo(() => gastosPorCategoria.reduce((s, g) => s + g.total, 0), [gastosPorCategoria])
 
   const cuentasConBalance = useMemo(() =>
-    cuentas.map((c) => ({ ...c, balance: obtenerBalanceCuenta(c.id, c.saldoInicial, transaccionesFiltradas) })), [cuentas, transaccionesFiltradas])
+    cuentas.map((c) => ({ ...c, balance: obtenerBalanceCuenta(c.id, c.saldoInicial, transaccionesFiltradas, transferencias) })), [cuentas, transaccionesFiltradas, transferencias])
   const totalBalanceCuentas = useMemo(() => cuentasConBalance.reduce((s, c) => s + Math.abs(c.balance), 0), [cuentasConBalance])
 
   const ingresosPorMes = useMemo(() => {
@@ -81,14 +81,14 @@ export default function Estadisticas() {
     if (!filtroDesde && !filtroHasta && !semanaActiva) {
       const inicio = `${filtroAnio}-${String(parseInt(filtroMes)).padStart(2, '0')}-01`
       const antes = transacciones.filter((t) => t.fecha < inicio)
-      return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, antes), 0)
+      return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, antes, transferencias), 0)
     }
     if (filtroDesde) {
       const antes = transacciones.filter((t) => t.fecha < filtroDesde)
-      return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, antes), 0)
+      return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, antes, transferencias), 0)
     }
-    return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones), 0)
-  }, [cuentas, transacciones, filtroDesde, filtroHasta, filtroMes, filtroAnio, semanaActiva])
+    return cuentas.reduce((total, c) => total + obtenerBalanceCuenta(c.id, c.saldoInicial, transacciones, transferencias), 0)
+  }, [cuentas, transacciones, transferencias, filtroDesde, filtroHasta, filtroMes, filtroAnio, semanaActiva])
 
   const puntosEvolucion = useMemo(() => {
     let txs = transaccionesFiltradas

@@ -12,7 +12,7 @@ import { XMarkIcon, PencilSquareIcon, TagIcon, WalletIcon, CalendarDaysIcon, Che
 export default function Gastos() {
   const { data, agregarTransaccion, actualizarTransaccion, eliminarTransaccion } = useApp()
   const { mostrarToast } = useToast()
-  const { cuentas, transacciones } = data
+  const { cuentas, transacciones, transferencias } = data
 
   const gastos = useMemo(() => transacciones.filter((t) => t.tipo === 'gasto').sort((a, b) => b.fecha.localeCompare(a.fecha)), [transacciones])
 
@@ -41,7 +41,7 @@ export default function Gastos() {
     const monto = parseFloat(formMonto)
     const cuenta = cuentas.find((c) => c.id === formCuentaId)
     if (!cuenta) return
-    const balanceActual = obtenerBalanceCuenta(formCuentaId, cuenta.saldoInicial, transacciones)
+    const balanceActual = obtenerBalanceCuenta(formCuentaId, cuenta.saldoInicial, transacciones, transferencias)
     const disponible = editando ? balanceActual + editando.monto : balanceActual
     if (monto > disponible) {
       mostrarToast(`Saldo insuficiente — Disponible: ${formatearMoneda(disponible)}`, 'error')
